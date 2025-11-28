@@ -64,3 +64,16 @@ class ProductAPIService {
       return { success: false, error: error.message };
     }
   }
+ // DELETE - Delete a product
+  async deleteProduct(id) {
+    const options = {
+      method: 'DELETE'
+    };
+
+    try {
+      const result = await this.makeRequest(`/products/${id}`, options);
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
