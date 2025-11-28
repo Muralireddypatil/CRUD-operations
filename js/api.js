@@ -42,3 +42,12 @@ class ProductAPIService {
       return { success: false, error: error.message };
     }
   }
+  // READ - Get all products
+  async getAllProducts() {
+    try {
+      const result = await this.makeRequest('/products');
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
