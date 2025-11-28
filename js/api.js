@@ -51,3 +51,16 @@ class ProductAPIService {
       return { success: false, error: error.message };
     }
   }
+  // UPDATE - Update existing product
+  async updateProduct(id, productData) {
+    const options = {
+      method: 'PUT',
+      body: JSON.stringify(productData)
+    };
+    try {
+      const result = await this.makeRequest(`/products/${id}`, options);
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
