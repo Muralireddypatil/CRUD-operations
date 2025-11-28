@@ -28,3 +28,17 @@ class ProductAPIService {
       throw error;
     }
   }
+ // CREATE - Add new product
+  async createProduct(productData) {
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(productData)
+    };
+
+    try {
+      const result = await this.makeRequest('/products', options);
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
