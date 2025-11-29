@@ -90,3 +90,13 @@ class ProductAPIService {
       return { success: false, error: error.message };
     }
   }
+  // Get next available ID
+  async getNextId() {
+    try {
+      const result = await this.makeRequest('/next-id');
+      return result.success ? result.data.nextId : 1;
+    } catch (error) {
+      console.error('Error getting next ID:', error);
+      return 1;
+    }
+  }
