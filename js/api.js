@@ -110,3 +110,6 @@ class ProductAPIService {
     }
   }
 }
+// Create and export API service instance
+const apiService = new ProductAPIService();
+export default apiService;
