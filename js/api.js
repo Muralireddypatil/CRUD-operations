@@ -77,3 +77,16 @@ class ProductAPIService {
       return { success: false, error: error.message };
     }
   }
+// DELETE ALL - Clear all products
+  async deleteAllProducts() {
+    const options = {
+      method: 'DELETE'
+    };
+
+    try {
+      const result = await this.makeRequest('/products', options);
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
