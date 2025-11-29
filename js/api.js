@@ -100,3 +100,13 @@ class ProductAPIService {
       return 1;
     }
   }
+// Health check
+  async healthCheck() {
+    try {
+      const result = await this.makeRequest('/health');
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+}
