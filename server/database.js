@@ -58,3 +58,23 @@ const getAllRows = (query, params = []) => {
     });
   });
 };
+// Database operations
+const dbOperations = {
+  // Get all products
+  getAllProducts: () => {
+    return getAllRows('SELECT * FROM products ORDER BY id ASC');
+  },
+
+  // Get product by ID
+  getProductById: (id) => {
+    return getRow('SELECT * FROM products WHERE id = ?', [id]);
+  },
+
+  // Create new product
+  createProduct: (productData) => {
+    const { name, seller, price } = productData;
+    return runQuery(
+      'INSERT INTO products (name, seller, price) VALUES (?, ?, ?)',
+      [name.trim(), seller.trim(), price.toString()]
+    );
+  }, 
