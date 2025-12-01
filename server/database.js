@@ -78,3 +78,21 @@ const dbOperations = {
       [name.trim(), seller.trim(), price.toString()]
     );
   }, 
+    // Update product
+  updateProduct: (id, productData) => {
+    const { name, seller, price } = productData;
+    return runQuery(
+      'UPDATE products SET name = ?, seller = ?, price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [name.trim(), seller.trim(), price.toString(), id]
+    );
+  },
+
+  // Delete product
+  deleteProduct: (id) => {
+    return runQuery('DELETE FROM products WHERE id = ?', [id]);
+  },
+
+  // Delete all products and reset ID counter
+  deleteAllProducts: () => {
+    return runQuery('DELETE FROM products');
+  },
