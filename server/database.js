@@ -34,3 +34,15 @@ const initializeDatabase = () => {
     }
   });
 };
+// Helper function to get single row
+const getRow = (query, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.get(query, params, (err, row) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(row);
+      }
+    });
+  });
+};
