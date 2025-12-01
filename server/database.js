@@ -96,3 +96,20 @@ const dbOperations = {
   deleteAllProducts: () => {
     return runQuery('DELETE FROM products');
   },
+// Reset ID counter (SQLite specific)
+  resetIdCounter: () => {
+    return runQuery('DELETE FROM sqlite_sequence WHERE name = "products"');
+  },
+
+  // Get next available ID
+  getNextId: () => {
+    return getRow('SELECT COALESCE(MAX(id), 0) + 1 as nextId FROM products');
+  },
+
+  // Get products count
+  getProductsCount: () => {
+    return getRow('SELECT COUNT(*) as count FROM products');
+  }
+};
+
+module.exports = { db, dbOperations };
