@@ -86,3 +86,44 @@ app.post('/api/products', async (req, res) => {
     });
   }
 });
+// PUT /api/products/:id - Update product
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, seller, price } = req.body;
+    
+    // Check if product exists
+    const existingProduct = await dbOperations.getProductById(id);
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+    
+    // Validation
+    if (!name || !seller || !price) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name, seller, and price are required'
+      });
+    }
+    
+    // Update product
+    await dbOperations.updateProduct(id, { name, seller, price });
+    const updatedProduct = await dbOperations.getProductById(id);
+    
+    res.json({
+      success: true,
+      data: updatedProduct,
+      message: 'Product updated successfully'
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update product',
+      message: error.message
+    });
+  }
+});
