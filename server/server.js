@@ -30,3 +30,29 @@ app.get('/api/products', async (req, res) => {
     });
   }
 });
+// GET /api/products/:id - Get product by ID
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const product = await dbOperations.getProductById(id);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch product',
+      message: error.message
+    });
+  }
+});
