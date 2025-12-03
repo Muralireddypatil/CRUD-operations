@@ -127,3 +127,8 @@ app.put('/api/products/:id', async (req, res) => {
     });
   }
 });
+// DELETE /api/products/:id - Delete product
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    
