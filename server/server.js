@@ -10,3 +10,23 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+// GET /api/products - Get all products
+app.get('/api/products', async (req, res) => {
+  try {
+    const products = await dbOperations.getAllProducts();
+    const countResult = await dbOperations.getProductsCount();
+    
+    res.json({
+      success: true,
+      data: products,
+      count: countResult.count
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch products',
+      message: error.message
+    });
+  }
+});
