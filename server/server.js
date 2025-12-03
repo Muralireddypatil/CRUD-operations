@@ -131,4 +131,28 @@ app.put('/api/products/:id', async (req, res) => {
 app.delete('/api/products/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+  // Check if product exists
+    const existingProduct = await dbOperations.getProductById(id);
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
     
+    await dbOperations.deleteProduct(id);
+    
+    res.json({
+      success: true,
+      data: existingProduct,
+      message: 'Product deleted successfully'
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete product',
+      message: error.message
+    })
+  }
+});                                                                                                                                                                                                                                                                                                                                    
