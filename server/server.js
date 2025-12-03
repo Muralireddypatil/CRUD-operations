@@ -56,3 +56,33 @@ app.get('/api/products/:id', async (req, res) => {
     });
   }
 });
+// POST /api/products - Create new product
+app.post('/api/products', async (req, res) => {
+  try {
+    const { name, seller, price } = req.body;
+    
+    // Validation
+    if (!name || !seller || !price) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name, seller, and price are required'
+      });
+    }
+    
+    const result = await dbOperations.createProduct({ name, seller, price });
+    const newProduct = await dbOperations.getProductById(result.id);
+    
+    res.status(201).json({
+      success: true,
+      data: newProduct,
+      message: 'Product created successfully'
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create product',
+      message: error.message
+    });
+  }
+});
