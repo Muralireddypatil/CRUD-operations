@@ -214,3 +214,5 @@ app.get('/api/health', async (req, res) => {
 });
 // Serve static files from the src directory
 app.use(express.static(path.join(__dirname, '../src')));
+// Serve JavaScript files from the js directory
+app.use('/js', express.static(path.join(__dirname, '../js')));
