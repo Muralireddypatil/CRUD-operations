@@ -156,3 +156,23 @@ app.delete('/api/products/:id', async (req, res) => {
     })
   }
 });                                                                                                                                                                                                                                                                                                                                    
+// DELETE /api/products - Delete all products
+app.delete('/api/products', async (req, res) => {
+  try {
+    const countResult = await dbOperations.getProductsCount();
+    await dbOperations.deleteAllProducts();
+    await dbOperations.resetIdCounter(); // Reset ID counter to start from 1
+    
+    res.json({
+      success: true,
+      message: `All ${countResult.count} products deleted successfully`
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete all products',
+      message: error.message
+    });
+  }
+});                                                
