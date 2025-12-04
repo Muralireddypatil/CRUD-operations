@@ -176,3 +176,20 @@ app.delete('/api/products', async (req, res) => {
     });
   }
 });                                                
+// GET /api/next-id - Get next available ID
+app.get('/api/next-id', async (req, res) => {
+  try {
+    const result = await dbOperations.getNextId();
+    res.json({
+      success: true,
+      data: { nextId: result.nextId }
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get next ID',
+      message: error.message
+    });
+  }
+});
