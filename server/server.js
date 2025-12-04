@@ -193,3 +193,22 @@ app.get('/api/next-id', async (req, res) => {
     });
   }
 });
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const countResult = await dbOperations.getProductsCount();
+    res.json({
+      success: true,
+      message: 'API server is running',
+      timestamp: new Date().toISOString(),
+      productsCount: countResult.count
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database connection failed',
+      message: error.message
+    });
+  }
+});
