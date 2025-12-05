@@ -220,3 +220,13 @@ app.use('/js', express.static(path.join(__dirname, '../js')));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../src/Index.html'));
 });
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    error: 'Something went wrong!',
+    message: err.message
+  });
+});
+ 
