@@ -216,3 +216,7 @@ app.get('/api/health', async (req, res) => {
 app.use(express.static(path.join(__dirname, '../src')));
 // Serve JavaScript files from the js directory
 app.use('/js', express.static(path.join(__dirname, '../js')));
+// Default route to serve the main HTML file
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../src/Index.html'));
+});
