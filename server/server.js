@@ -229,4 +229,10 @@ app.use((err, req, res, next) => {
     message: err.message
   });
 });
- 
+ // 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Route not found'
+  });
+});
