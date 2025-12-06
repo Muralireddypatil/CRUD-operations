@@ -1,14 +1,11 @@
 {
-  {
-  "name": "crud-operations-root",
+  "name": "crud-operations",
   "version": "1.0.0",
-  "private": true,
+  "description": "Electronic Store CRUD API",
+  "main": "server.js",
   "scripts": {
-    "heroku-postbuild": "npm --prefix server install",
-    "start": "npm --prefix server start"
-  }
-}
-
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
