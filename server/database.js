@@ -13,6 +13,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     initializeDatabase();
   }
 });
+
 // Initialize database tables
 const initializeDatabase = () => {
   const createTableQuery = `
@@ -34,51 +35,55 @@ const initializeDatabase = () => {
     }
   });
 };
-// Helper function to get single row
+
+// Helper: Get single row
 const getRow = (query, params = []) => {
   return new Promise((resolve, reject) => {
     db.get(query, params, (err, row) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(row);
-      }
+      if (err) reject(err);
+      else resolve(row);
     });
   });
 };
-// Helper function to get multiple rows
+
+// Helper: Get multiple rows
 const getAllRows = (query, params = []) => {
   return new Promise((resolve, reject) => {
     db.all(query, params, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
+      if (err) reject(err);
+      else resolve(rows);
     });
   });
 };
+
+// ✅ FIXED: Missing runQuery()
+const runQuery = (query, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.run(query, params, function (err) {
+      if (err) reject(err);
+      else resolve({ id: this.lastID, changes: this.changes });
+    });
+  });
+};
+
 // Database operations
 const dbOperations = {
-  // Get all products
   getAllProducts: () => {
     return getAllRows('SELECT * FROM products ORDER BY id ASC');
   },
 
-  // Get product by ID
   getProductById: (id) => {
     return getRow('SELECT * FROM products WHERE id = ?', [id]);
   },
 
-  // Create new product
   createProduct: (productData) => {
     const { name, seller, price } = productData;
     return runQuery(
       'INSERT INTO products (name, seller, price) VALUES (?, ?, ?)',
       [name.trim(), seller.trim(), price.toString()]
     );
-  }, 
-    // Update product
+  },
+
   updateProduct: (id, productData) => {
     const { name, seller, price } = productData;
     return runQuery(
@@ -87,26 +92,22 @@ const dbOperations = {
     );
   },
 
-  // Delete product
   deleteProduct: (id) => {
     return runQuery('DELETE FROM products WHERE id = ?', [id]);
   },
 
-  // Delete all products and reset ID counter
   deleteAllProducts: () => {
     return runQuery('DELETE FROM products');
   },
-// Reset ID counter (SQLite specific)
+
   resetIdCounter: () => {
     return runQuery('DELETE FROM sqlite_sequence WHERE name = "products"');
   },
 
-  // Get next available ID
   getNextId: () => {
     return getRow('SELECT COALESCE(MAX(id), 0) + 1 as nextId FROM products');
   },
 
-  // Get products count
   getProductsCount: () => {
     return getRow('SELECT COUNT(*) as count FROM products');
   }
