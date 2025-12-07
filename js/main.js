@@ -1,217 +1,141 @@
-import apiService from "./api.js";
+// main.js — UI logic
+const apiService = window.apiService;
 
-//input tags
 const userid = document.getElementById("userid");
 const proname = document.getElementById("proname");
 const seller = document.getElementById("seller");
 const price = document.getElementById("price");
-
-//buttons
 const btncreate = document.getElementById("btn-create");
 const btnread = document.getElementById("btn-read");
 const btnupdate = document.getElementById("btn-update");
 const btndelete = document.getElementById("btn-delete");
-
-//notfound
 const notfound = document.getElementById("notfound");
+const tbody = document.getElementById("tbody");
 
-// Global products array to store current data
 let products = [];
 
-//insert value using create button
-btncreate.onclick = async event => {
-  const productData = {
-    name: proname.value,
-    seller: seller.value,
-    price: price.value
-  };
-
-  const result = await apiService.createProduct(productData);
-  
-  if(result.success) {
-    proname.value = seller.value = price.value = "";
-    await updateNextId();
-    await table();
-    
-    let insertmsg = document.querySelector(".insertmsg");
-    getMsg(true, insertmsg);
-  } else {
-    console.error("Create failed:", result.error);
-    let insertmsg = document.querySelector(".insertmsg");
-    getMsg(false, insertmsg);
-  }
-};
-
-//create event on btn read button
-btnread.onclick = async () => {
-  await table();
-};
-
-//update event
-btnupdate.onclick = async () => {
-  const id = parseInt(userid.value || 0);
-  if(id) {
-    const productData = {
-      name: proname.value,
-      seller: seller.value,
-      price: price.value
-    };
-
-    const result = await apiService.updateProduct(id, productData);
-    
-    if(result.success) {
-      let updatemsg = document.querySelector(".updatemsg");
-      getMsg(true, updatemsg);
-      
-      // Clear form fields
-      proname.value = seller.value = price.value = "";
-      
-      // Update table and get next available ID
-      await table();
-      await updateNextId();
-    } else {
-      console.error("Update failed:", result.error);
-      let updatemsg = document.querySelector(".updatemsg");
-      getMsg(false, updatemsg);
-    }
-  }
-};
-
-//delete records
-btndelete.onclick = async () => {
-  const result = await apiService.deleteAllProducts();
-  
-  if(result.success) {
-    products = [];
-    await table();
-    await updateNextId();
-
-    let deletemsg = document.querySelector(".deletemsg");
-    getMsg(true, deletemsg);
-  } else {
-    console.error("Delete all failed:", result.error);
-    let deletemsg = document.querySelector(".deletemsg");
-    getMsg(false, deletemsg);
-  }
-};
-
-//window onload event
+// Load next ID on startup
 window.onload = async () => {
   await updateNextId();
-  await table();
+  await loadTable();
 };
 
+// CREATE
+btncreate.onclick = async () => {
+  const obj = {
+    name: proname.value,
+    seller: seller.value,
+    price: price.value,
+  };
+
+  const result = await apiService.createProduct(obj);
+  if (result.success) {
+    showMsg(".insertmsg");
+    clearInputs();
+    await updateNextId();
+    await loadTable();
+  }
+};
+
+// READ
+btnread.onclick = async () => {
+  await loadTable();
+};
+
+// UPDATE
+btnupdate.onclick = async () => {
+  const id = parseInt(userid.value);
+  if (!id) return;
+
+  const data = {
+    name: proname.value,
+    seller: seller.value,
+    price: price.value,
+  };
+
+  const result = await apiService.updateProduct(id, data);
+  if (result.success) {
+    showMsg(".updatemsg");
+    clearInputs();
+    await updateNextId();
+    await loadTable();
+  }
+};
+
+// DELETE ALL
+btndelete.onclick = async () => {
+  await apiService.deleteAllProducts();
+  showMsg(".deletemsg");
+  await updateNextId();
+  await loadTable();
+};
+
+// Update next ID
 async function updateNextId() {
-  const nextId = await apiService.getNextId();
-  userid.value = nextId;
+  const result = await apiService.getNextId();
+  userid.value = result.data.nextId;
 }
 
-async function table() {
-  const tbody = document.getElementById("tbody");
+// Load table data
+async function loadTable() {
+  tbody.innerHTML = "";
 
-  while(tbody.hasChildNodes()) {
-    tbody.removeChild(tbody.firstChild);
+  const result = await apiService.getAllProducts();
+
+  if (!result.success || result.data.length === 0) {
+    notfound.textContent = "No records found!";
+    return;
   }
 
   notfound.textContent = "";
+  products = result.data;
 
-  const result = await apiService.getAllProducts();
-  
-  if(result.success) {
-    products = result.data;
-    
-    if(products.length > 0) {
-      products.forEach(product => {
-        createEle("tr", tbody, tr => {
-          // ID column
-          createEle("td", tr, td => {
-            td.textContent = product.id;
-          });
-          
-          // Name column
-          createEle("td", tr, td => {
-            td.textContent = product.name;
-          });
-          
-          // Seller column
-          createEle("td", tr, td => {
-            td.textContent = product.seller;
-          });
-          
-          // Price column
-          createEle("td", tr, td => {
-            td.textContent = `€ ${product.price}`;
-          });
-          
-          // Edit column
-          createEle("td", tr, td => {
-            createEle("i", td, i => {
-              i.className += "fas fa-edit btnedit";
-              i.setAttribute('data-id', product.id);
-              i.onclick = editbtn;
-            });
-          });
-          
-          // Delete column
-          createEle("td", tr, td => {
-            createEle("i", td, i => {
-              i.className += "fas fa-trash-alt btndelete";
-              i.setAttribute('data-id', product.id);
-              i.onclick = deletebtn;
-            });
-          });
-        });
-      });
-    } else {
-      notfound.textContent = "No records found in the database...!";
-    }
-  } else {
-    console.error("Failed to fetch products:", result.error);
-    notfound.textContent = "Error loading products...!";
-  }
+  products.forEach((p) => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${p.id}</td>
+      <td>${p.name}</td>
+      <td>${p.seller}</td>
+      <td>€ ${p.price}</td>
+      <td><i class="fas fa-edit btnedit" data-id="${p.id}"></i></td>
+      <td><i class="fas fa-trash-alt btndelete" data-id="${p.id}"></i></td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  // Edit button
+  document.querySelectorAll(".btnedit").forEach((btn) => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const p = products.find((x) => x.id == id);
+
+      userid.value = p.id;
+      proname.value = p.name;
+      seller.value = p.seller;
+      price.value = p.price;
+    };
+  });
+
+  // Delete button
+  document.querySelectorAll(".btndelete").forEach((btn) => {
+    btn.onclick = async () => {
+      await apiService.deleteProduct(btn.dataset.id);
+      await updateNextId();
+      await loadTable();
+    };
+  });
 }
 
-async function editbtn(event) {
-  let id = parseInt(event.target.dataset.id);
-  
-  const product = products.find(p => p.id === id);
-  if(product) {
-    userid.value = product.id || 0;
-    proname.value = product.name || "";
-    seller.value = product.seller || "";
-    price.value = product.price || "";
-  }
+function clearInputs() {
+  proname.value = "";
+  seller.value = "";
+  price.value = "";
 }
 
-const deletebtn = async event => {
-  let id = parseInt(event.target.dataset.id);
-  
-  const result = await apiService.deleteProduct(id);
-  
-  if(result.success) {
-    await table();
-    await updateNextId();
-  } else {
-    console.error("Delete failed:", result.error);
-  }
-};
-
-//create dynamic elements
-const createEle = (tagname, appendTo, fn) => {
-  const element = document.createElement(tagname);
-  if(appendTo) appendTo.appendChild(element);
-  if(fn) fn(element);
-};
-
-function getMsg(flag, element) {
-  if (flag) {
-    element.className += " movedown";
-
-    setTimeout(() => {
-      element.classList.forEach(classname => {
-        classname == "movedown" ? undefined : element.classList.remove("movedown");
-      });
-    }, 4000);
-  }
+function showMsg(selector) {
+  const el = document.querySelector(selector);
+  el.classList.add("movedown");
+  setTimeout(() => el.classList.remove("movedown"), 3000);
 }
-

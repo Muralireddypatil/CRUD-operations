@@ -3,56 +3,46 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const { dbOperations } = require('./database');
+const { db, dbOperations } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static assets: src/ as root, and js/ at /js (so you don't need to move UI files)
+// Serve frontend files
 app.use(express.static(path.join(__dirname, '..', 'src')));
 app.use('/js', express.static(path.join(__dirname, '..', 'js')));
 
-// --- API routes ---
+// Helper to send internal server error
+function internalError(res, err, msg = 'Internal server error') {
+  console.error(msg, err);
+  return res.status(500).json({ success: false, error: msg, message: err?.message || '' });
+}
 
 // GET /api/products - Get all products
 app.get('/api/products', async (req, res) => {
   try {
-    dbOperations.getAllProducts((err, products) => {
-      if (err) {
-        console.error('DB error', err);
-        return res.status(500).json({ success: false, error: 'Failed to fetch products', message: err.message });
-      }
-      dbOperations.getProductsCount((err2, countResult) => {
-        if (err2) {
-          console.error('DB error', err2);
-          return res.status(500).json({ success: false, error: 'Failed to fetch count', message: err2.message });
-        }
-        res.json({ success: true, data: products, count: countResult.count });
-      });
-    });
-  } catch (error) {
-    console.error('Unexpected error', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch products', message: error.message });
+    const products = await dbOperations.getAllProducts();
+    const countRow = await dbOperations.getProductsCount();
+    const count = countRow && typeof countRow.count === 'number' ? countRow.count : 0;
+    return res.json({ success: true, data: products, count });
+  } catch (err) {
+    return internalError(res, err, 'Failed to fetch products');
   }
 });
 
 // GET /api/products/:id - Get product by ID
 app.get('/api/products/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    dbOperations.getProductById(id, (err, product) => {
-      if (err) return res.status(500).json({ success: false, error: 'Failed to fetch product', message: err.message });
-      if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
-      res.json({ success: true, data: product });
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch product', message: error.message });
+    const id = parseInt(req.params.id, 10);
+    const product = await dbOperations.getProductById(id);
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+    return res.json({ success: true, data: product });
+  } catch (err) {
+    return internalError(res, err, 'Failed to fetch product');
   }
 });
 
@@ -63,126 +53,99 @@ app.post('/api/products', async (req, res) => {
     if (!name || seller === undefined || price === undefined) {
       return res.status(400).json({ success: false, error: 'Name, seller, and price are required' });
     }
-    dbOperations.createProduct({ name, seller, price }, (err, result) => {
-      if (err) return res.status(500).json({ success: false, error: 'Failed to create product', message: err.message });
-      dbOperations.getProductById(result.id, (err2, newProduct) => {
-        if (err2) return res.status(500).json({ success: false, error: 'Failed to fetch new product', message: err2.message });
-        res.status(201).json({ success: true, data: newProduct, message: 'Product created successfully' });
-      });
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create product', message: error.message });
+
+    const result = await dbOperations.createProduct({ name, seller, price });
+    // result from runQuery is { id: lastID, changes: ... }
+    const newProduct = await dbOperations.getProductById(result.id);
+    return res.status(201).json({ success: true, data: newProduct, message: 'Product created successfully' });
+  } catch (err) {
+    return internalError(res, err, 'Failed to create product');
   }
 });
 
 // PUT /api/products/:id - Update product
 app.put('/api/products/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
     const { name, seller, price } = req.body;
 
-    dbOperations.getProductById(id, (err, existingProduct) => {
-      if (err) return res.status(500).json({ success: false, error: 'Failed to fetch product', message: err.message });
-      if (!existingProduct) return res.status(404).json({ success: false, error: 'Product not found' });
+    const existing = await dbOperations.getProductById(id);
+    if (!existing) return res.status(404).json({ success: false, error: 'Product not found' });
 
-      if (!name || seller === undefined || price === undefined) {
-        return res.status(400).json({ success: false, error: 'Name, seller, and price are required' });
-      }
+    if (!name || seller === undefined || price === undefined) {
+      return res.status(400).json({ success: false, error: 'Name, seller, and price are required' });
+    }
 
-      dbOperations.updateProduct(id, { name, seller, price }, (err2) => {
-        if (err2) return res.status(500).json({ success: false, error: 'Failed to update product', message: err2.message });
-        dbOperations.getProductById(id, (err3, updatedProduct) => {
-          if (err3) return res.status(500).json({ success: false, error: 'Failed to fetch updated product', message: err3.message });
-          res.json({ success: true, data: updatedProduct, message: 'Product updated successfully' });
-        });
-      });
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update product', message: error.message });
+    await dbOperations.updateProduct(id, { name, seller, price });
+    const updated = await dbOperations.getProductById(id);
+    return res.json({ success: true, data: updated, message: 'Product updated successfully' });
+  } catch (err) {
+    return internalError(res, err, 'Failed to update product');
   }
 });
 
 // DELETE /api/products/:id - Delete product
 app.delete('/api/products/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    dbOperations.getProductById(id, (err, existingProduct) => {
-      if (err) return res.status(500).json({ success: false, error: 'Failed to fetch product', message: err.message });
-      if (!existingProduct) return res.status(404).json({ success: false, error: 'Product not found' });
+    const id = parseInt(req.params.id, 10);
+    const existing = await dbOperations.getProductById(id);
+    if (!existing) return res.status(404).json({ success: false, error: 'Product not found' });
 
-      dbOperations.deleteProduct(id, (err2) => {
-        if (err2) return res.status(500).json({ success: false, error: 'Failed to delete product', message: err2.message });
-        res.json({ success: true, data: existingProduct, message: 'Product deleted successfully' });
-      });
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete product', message: error.message });
+    await dbOperations.deleteProduct(id);
+    return res.json({ success: true, data: existing, message: 'Product deleted successfully' });
+  } catch (err) {
+    return internalError(res, err, 'Failed to delete product');
   }
 });
 
 // DELETE /api/products - Delete all products
 app.delete('/api/products', async (req, res) => {
   try {
-    dbOperations.getProductsCount((err, countResult) => {
-      if (err) return res.status(500).json({ success: false, error: 'Failed to get count', message: err.message });
-      dbOperations.deleteAllProducts((err2) => {
-        if (err2) return res.status(500).json({ success: false, error: 'Failed to delete all products', message: err2.message });
-        dbOperations.resetIdCounter(() => { /* ignore error */ });
-        res.json({ success: true, message: `All ${countResult.count} products deleted successfully` });
-      });
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete all products', message: error.message });
+    const countRow = await dbOperations.getProductsCount();
+    const count = countRow && typeof countRow.count === 'number' ? countRow.count : 0;
+    await dbOperations.deleteAllProducts();
+    await dbOperations.resetIdCounter();
+    return res.json({ success: true, message: `All ${count} products deleted successfully` });
+  } catch (err) {
+    return internalError(res, err, 'Failed to delete all products');
   }
 });
 
 // GET /api/next-id - Get next available ID
 app.get('/api/next-id', async (req, res) => {
   try {
-    dbOperations.getNextId((err, result) => {
-      if (err) return res.status(500).json({ success: false, error: 'Failed to get next ID', message: err.message });
-      res.json({ success: true, data: { nextId: result.nextId } });
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get next ID', message: error.message });
+    const row = await dbOperations.getNextId();
+    const nextId = row && (row.nextId || (row.data && row.data.nextId)) ? (row.nextId || row.data.nextId) : 1;
+    return res.json({ success: true, data: { nextId } });
+  } catch (err) {
+    return internalError(res, err, 'Failed to get next ID');
   }
 });
 
-// Health check
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
-    dbOperations.getProductsCount((err, countResult) => {
-      if (err) return res.status(500).json({ success: false, error: 'DB error', message: err.message });
-      res.json({ success: true, message: 'API server is running', timestamp: new Date().toISOString(), productsCount: countResult.count });
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ success: false, error: 'Database connection failed', message: error.message });
+    const countRow = await dbOperations.getProductsCount();
+    const count = countRow && typeof countRow.count === 'number' ? countRow.count : 0;
+    return res.json({ success: true, message: 'API running', timestamp: new Date().toISOString(), productsCount: count });
+  } catch (err) {
+    return internalError(res, err, 'Database connection failed');
   }
 });
 
-// Serve index.html for root explicitly (ensure lowercase file name)
+// Serve main index explicitly
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'src', 'index.html'));
 });
 
-// Error handling middleware
+// Error handlers
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ success: false, error: 'Something went wrong!', message: err.message });
+  console.error(err && err.stack ? err.stack : err);
+  res.status(500).json({ success: false, error: 'Something went wrong!', message: err?.message || '' });
 });
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: 'Route not found' });
-});
+app.use((req, res) => res.status(404).json({ success: false, error: 'Route not found' }));
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 API Server running on port ${PORT}`);
+  console.log(`API Server running on port ${PORT}`);
 });
