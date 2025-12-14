@@ -2,7 +2,7 @@ This​‍​‌‍​‍‌​‍​‌‍​‍‌ project is typical of the C
 
 The frontend interface intends to be a user-friendly and straightforward tool with input fields for product name, Seller, and price. These inputs work with the API via the Fetch API that enables the application to update data dynamically without the need for a page refresh. The backend is responsible for all CRUD operations and data validation. Also, it coordinates with the SQLite database to get the product information that is to be stored or retrieved. This project has a neat folder structure that server files, frontend files, and JavaScript logic are separated for better organisation.
 
-To have the system running on a local machine, the user should install all necessary dependencies by running “npm install” and then launch the server with “npm start”. The application will be accessible via the URL “http://localhost:3000” once the server is up and running.
+
 
 The backend provides API routes for all CRUD operations. Besides, it includes endpoints for getting the next available ID as well as for the server health check. The frontend is backed by these API routes and facilitates the user commands from UI to the database.
 
