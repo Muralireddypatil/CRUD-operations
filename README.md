@@ -12,3 +12,9 @@ The entire project is aimed at showcasing the author’s knowledge of API-based 
 
 In this project I only created Api's so rest of the code i have done last time that means semester 1. you can have a look at my repository [Murali8327] that i did 8 months ago.
 
+References : I took my senior help in database.js [created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP] and in server.js 
+// Helper to send internal server error
+function internalError(res, err, msg = 'Internal server error') {
+  console.error(msg, err);
+  return res.status(500).json({ success: false, error: msg, message: err?.message || '' });
