@@ -9,3 +9,6 @@ The backend provides API routes for all CRUD operations. Besides, it includes en
 As for the deployment on Render, the only thing that needs to be done is to provide the build and start commands with “npm install” and “node server/server.js” respectively. There are no environment variables since SQLite keeps the data in a local file. Thus, the deployment process is pretty much straightforward.
 
 The entire project is aimed at showcasing the author’s knowledge of API-based architecture, DOM manipulation, and backend integration using ​‍​‌‍​‍‌​‍​‌‍​‍‌JavaScript.
+
+In this project I only created Api's so rest of the code i have done last time that means semester 1. you can have a look at my repository [Murali8327] that i did 8 months ago.
+
